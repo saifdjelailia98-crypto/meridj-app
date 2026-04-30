@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AL-MURAIJ</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* ============================================================
+           LAYOUT ROOT — يمنع تغيّر الحجم عند التنقل بين الأقسام
+        ============================================================ */
+        html, body {
+            height: 100%;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* الغلاف الخارجي: حجم ثابت دائماً */
+        #app-wrapper {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            /* خلفية التطبيق */
+            background: #e0e5ec;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            /* منع أي تغيّر في الحجم بسبب المحتوى */
+            overflow: hidden;
+        }
+        #app-wrapper.show { opacity: 1; }
+
+        /* التطبيق نفسه: أبعاد ثابتة لا تتغير أبداً */
+        #app {
+            width: 100vw !important;
+            max-width: 450px !important;
+            height: 95vh !important;
+            min-height: 95vh !important;
+            max-height: 95vh !important;
+            flex-shrink: 0 !important;
+            /* كل شيء داخله يُقصّ ولا يكسر الحجم */
+            overflow: hidden;
+        }
+
+        /* ============================================================
+           SPLASH SCREEN
+        ============================================================ */
+        :root {
+            --sp-a: #5eead4;
+            --sp-b: #60a5fa;
+            --sp-c: #c084fc;
+        }
+
+        #splash-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 28px;
+            background:
+                radial-gradient(900px 360px at 10% 18%, rgba(94,234,212,0.06), transparent),
+                radial-gradient(700px 300px at 90% 78%, rgba(96,165,250,0.05), transparent),
+                linear-gradient(180deg, #030417, #071430 70%);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        #splash-screen.hide {
+            opacity: 0;
+            transform: scale(1.05);
+            pointer-events: none;
+        }
+
+        /* البطاقة */
+        .sp-card {
+            width: min(400px, 92%);
+            height: 420px;
+            border-radius: 32px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            position: relative;
+            padding: 28px;
+            border: 1px solid rgba(255,255,255,0.04);
+            background: linear-gradient(180deg, rgba(255,255,255,0.014), rgba(0,0,0,0.06));
+            box-shadow: 0 40px 110px rgba(2,8,23,0.75), inset 0 1px 0 rgba(255,255,255,0.025);
+            opacity: 0;
+            transform: perspective(900px) translateY(20px) rotateX(7deg) scale(.97);
+            animation: spCardIn 0.65s forwards cubic-bezier(.2,.9,.2,1);
+        }
+        @keyframes spCardIn {
+            to { transform: perspective(900px) translateY(0) rotateX(0) scale(1); opacity: 1; }
+        }
+
+        /* لوحة الشعار */
+        .sp-logo-plate {
+            width: 180px;
+            height: 180px;
+            border-radius: 30px;
+            display: grid;
+            place-items: center;
+            position: relative;
+            background:
+                radial-gradient(circle at 28% 24%, rgba(255,255,255,0.04), transparent 18%),
+                conic-gradient(from 200deg, var(--sp-a), var(--sp-b) 60%, var(--sp-c) 100%);
+            box-shadow: 0 24px 60px rgba(96,165,250,0.1), inset 0 -10px 30px rgba(255,255,255,0.025);
+        }
+        .sp-halo {
+            position: absolute;
+            left: 50%; top: 50%;
+            transform: translate(-50%,-50%);
+            width: 310px; height: 310px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%,
+                rgba(94,234,212,0.18),
+                rgba(96,165,250,0.08),
+                transparent 58%);
+            filter: blur(40px);
+            opacity: .9;
+            z-index: -1;
+        }
+        .sp-logo-svg {
+            width: 114px; height: 114px;
+            filter: drop-shadow(0 10px 28px rgba(96,165,250,0.12));
+            transform-origin: center;
+        }
+
+        /* اسم التطبيق */
+        .sp-brand {
+            font-weight: 900;
+            font-size: 30px;
+            letter-spacing: 1px;
+            font-family: Inter, "Segoe UI", Tahoma, Arial, sans-serif;
+            background: linear-gradient(90deg, #5eead4 0%, #e8fff8 50%, #c084fc 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-transform: lowercase;
+            margin-top: 4px;
+        }
+
+        /* بار التقدم — يمتلئ خلال 6 ثوانٍ */
+        .sp-progress-wrap {
+            width: 140px;
+            height: 4px;
+            background: rgba(255,255,255,0.08);
+            border-radius: 99px;
+            overflow: hidden;
+            margin-top: 4px;
+        }
+        .sp-progress-bar {
+            height: 100%;
+            width: 0%;
+            border-radius: 99px;
+            background: linear-gradient(90deg, var(--sp-a), var(--sp-b));
+            animation: spProgress 6s linear forwards;
+        }
+        @keyframes spProgress { to { width: 100%; } }
+
+        /* النقاط المتحركة */
+        .sp-dots {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+            height: 24px;
+        }
+        .sp-dot {
+            width: 11px; height: 11px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.07);
+            box-shadow: inset 0 -3px 6px rgba(0,0,0,0.4);
+        }
+        .sp-dot:nth-child(1) { animation: spJump 1.05s cubic-bezier(.2,.9,.2,1) infinite 0s; }
+        .sp-dot:nth-child(2) { animation: spJump 1.05s cubic-bezier(.2,.9,.2,1) infinite .14s; }
+        .sp-dot:nth-child(3) { animation: spJump 1.05s cubic-bezier(.2,.9,.2,1) infinite .28s; }
+        .sp-dot:nth-child(4) { animation: spJump 1.05s cubic-bezier(.2,.9,.2,1) infinite .42s; }
+        @keyframes spJump {
+            0%   { transform: translateY(0);     background: rgba(255,255,255,0.07); }
+            50%  { transform: translateY(-18px);  background: linear-gradient(90deg, var(--sp-a), var(--sp-b)); box-shadow: 0 12px 28px rgba(96,165,250,0.2); }
+            100% { transform: translateY(0);     background: rgba(255,255,255,0.07); }
+        }
+
+        /* شرارات */
+        .sp-spark {
+            position: absolute;
+            width: 7px; height: 7px;
+            border-radius: 50%;
+            background: linear-gradient(90deg, var(--sp-a), var(--sp-b));
+            box-shadow: 0 6px 18px rgba(96,165,250,0.16);
+            opacity: 0;
+        }
+
+        /* استجابة للشاشات الصغيرة */
+        @media (max-width: 480px) {
+            .sp-card        { height: 360px; padding: 20px; }
+            .sp-logo-plate  { width: 150px; height: 150px; }
+            .sp-logo-svg    { width: 96px; height: 96px; }
+            .sp-brand       { font-size: 24px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ==================== SPLASH ==================== -->
+    <div id="splash-screen">
+        <div class="sp-card">
+
+            <div class="sp-logo-plate" id="spLogoPlate">
+                <svg class="sp-logo-svg" id="spLogoSVG" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="SL1" x1="0" x2="1">
+                            <stop offset="0"  stop-color="#5eead4"/>
+                            <stop offset="1"  stop-color="#60a5fa"/>
+                        </linearGradient>
+                        <linearGradient id="SL2" x1="0" x2="1">
+                            <stop offset="0"  stop-color="#60a5fa"/>
+                            <stop offset="1"  stop-color="#c084fc"/>
+                        </linearGradient>
+                    </defs>
+                    <rect x="6" y="6" width="108" height="108" rx="22" fill="url(#SL2)" opacity="0.98"/>
+                    <g transform="translate(14,18)" fill="none">
+                        <path d="M8 56 L8 32 C8 24 16 18 24 18 L56 18"
+                              stroke="#022427" stroke-width="6"
+                              stroke-linecap="round" stroke-linejoin="round" opacity="0.98"/>
+                        <path d="M56 18 L56 56"
+                              stroke="#022427" stroke-width="6"
+                              stroke-linecap="round" stroke-linejoin="round" opacity="0.98"/>
+                        <circle cx="74" cy="64" r="10" fill="url(#SL1)" opacity="0.96"/>
+                    </g>
+                </svg>
+                <div class="sp-halo"></div>
+                <div class="sp-spark" style="left:11%;top:9%"></div>
+                <div class="sp-spark" style="left:83%;top:16%"></div>
+                <div class="sp-spark" style="left:77%;top:75%"></div>
+                <div class="sp-spark" style="left:16%;top:77%"></div>
+            </div>
+
+            <div class="sp-brand">al-muraij</div>
+
+            <!-- بار التقدم -->
+            <div class="sp-progress-wrap">
+                <div class="sp-progress-bar"></div>
+            </div>
+
+            <div class="sp-dots">
+                <div class="sp-dot"></div>
+                <div class="sp-dot"></div>
+                <div class="sp-dot"></div>
+                <div class="sp-dot"></div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ==================== APP ==================== -->
+    <div id="app-wrapper">
+
+        <div class="bg-blobs">
+            <div class="blob blob-1"></div>
+            <div class="blob blob-2"></div>
+            <div class="blob blob-3"></div>
+        </div>
+
+        <div id="app">
+            <div id="loader" class="loader-overlay"><div class="spinner"></div></div>
+
+            <header class="glass-header" id="main-header" style="display:none;">
+                <div class="logo">AL-<span class="accent">MURAIJ</span></div>
+                <div class="header-icons">
+                    <div class="icon-btn-wrap" id="nav-notifications">
+                        <i class="fas fa-bell icon-btn"></i>
+                        <span class="header-badge" id="notif-badge"></span>
+                    </div>
+                    <div class="icon-btn-wrap" id="nav-profile">
+                        <i class="fas fa-user-circle icon-btn"></i>
+                    </div>
+                </div>
+            </header>
+
+            <main id="main-content" class="view-container"></main>
+
+            <nav class="glass-nav" id="main-nav" style="display:none;">
+                <div class="nav-item active" data-view="home">
+                    <i class="fas fa-home"></i><span>الرئيسية</span>
+                </div>
+                <div class="nav-item" data-view="market">
+                    <i class="fas fa-store"></i><span>السوق</span>
+                </div>
+                <div class="nav-item" data-view="chat">
+                    <i class="fas fa-comments"></i><span>المراسلة</span>
+                </div>
+                <div class="nav-item" data-view="friends">
+                    <i class="fas fa-users"></i><span>الأصدقاء</span>
+                </div>
+            </nav>
+        </div>
+
+    </div>
+
+    <!-- Reaction Picker -->
+    <div id="reaction-picker" class="reaction-picker">
+        <span class="emoji" data-type="heart">❤️</span>
+        <span class="emoji" data-type="like">👍</span>
+        <span class="emoji" data-type="laugh">😂</span>
+        <span class="emoji" data-type="wow">😮</span>
+        <span class="emoji" data-type="sad">😢</span>
+        <span class="emoji" data-type="angry">😡</span>
+    </div>
+
+    <!-- Lightbox -->
+    <div id="lightbox" class="lightbox" onclick="this.style.display='none'">
+        <span class="close-lightbox">&times;</span>
+        <img id="lightbox-img" src="" alt="">
+    </div>
+
+    <!-- ==================== SPLASH SCRIPT ==================== -->
+    <script>
+    (function () {
+        const splash   = document.getElementById('splash-screen');
+        const appWrap  = document.getElementById('app-wrapper');
+        const logoSVG  = document.getElementById('spLogoSVG');
+        const sparks   = splash.querySelectorAll('.sp-spark');
+
+        /* نبضة الشعار */
+        logoSVG.animate([
+            { transform:'scale(.93) rotateX(8deg)', opacity:.88 },
+            { transform:'scale(1.08) rotateX(0deg)', opacity:1  },
+            { transform:'scale(1)   rotateX(0deg)', opacity:1  }
+        ], { duration:800, easing:'cubic-bezier(.2,.9,.2,1)' });
+
+        /* شرارات متقطعة */
+        sparks.forEach((s, i) => {
+            const loop = () => {
+                s.animate([
+                    { opacity:0, transform:'translateY(5px) scale(.8)'   },
+                    { opacity:1, transform:'translateY(-8px) scale(1.12)' },
+                    { opacity:0, transform:'translateY(0px) scale(.9)'   }
+                ], { duration: 900 + Math.random()*900, easing:'cubic-bezier(.2,.9,.2,1)' });
+                setTimeout(loop, 800 + Math.random()*1400);
+            };
+            setTimeout(loop, i * 180);
+        });
+
+        /* نقر على اللوحة */
+        document.getElementById('spLogoPlate').addEventListener('click', () => {
+            logoSVG.animate([
+                { transform:'scale(1)'    },
+                { transform:'scale(1.09)' },
+                { transform:'scale(1)'    }
+            ], { duration:420, easing:'ease-out' });
+        });
+
+        /* ← 6000 مللي ثانية = 6 ثوانٍ */
+        setTimeout(() => {
+            splash.classList.add('hide');
+            appWrap.classList.add('show');
+            splash.addEventListener('transitionend', () => splash.remove(), { once: true });
+        }, 6000);
+    })();
+    </script>
+
+    <script type="module" src="app.js"></script>
+</body>
+</html>
+
